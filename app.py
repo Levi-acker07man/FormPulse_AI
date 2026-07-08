@@ -4,7 +4,7 @@ import tensorflow as tf
 import joblib
 import plotly.graph_objects as go
 
-# --- 1. PAGE CONFIGURATION & HACKATHON STYLING ---
+#page configuraion
 st.set_page_config(page_title="FormPulse AI", page_icon="🏀", layout="wide")
 
 # Custom Dark Mode SaaS CSS
@@ -18,12 +18,21 @@ st.markdown("""
     }
     h1 { color: #00E676 !important; font-weight: 800; }
     h2, h3 { color: #ffffff !important; font-weight: 600; }
+    
+    /* SIDEBAR STYLING - Enlarged Text */
     [data-testid="stSidebar"] { background-color: #111520; border-right: 1px solid #232b3e; }
-    [data-testid="stSidebar"] h2, [data-testid="stSidebar"] label { color: #a3b1c6 !important; }
+    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2 { 
+        color: #a3b1c6 !important; 
+        font-size: 24px !important; /* Larger Header */
+    }
+    [data-testid="stSidebar"] label, [data-testid="stSidebar"] p, [data-testid="stSidebar"] div { 
+        color: #a3b1c6 !important; 
+        font-size: 18px !important; /* Larger Slider Text */
+    }
     </style>
 """, unsafe_allow_html=True)
 
-# --- 2. ENGINE INITIALIZATION ---
+#inisiazlising the main engine
 @st.cache_resource
 def load_engine():
     model = tf.keras.models.load_model('formpulse_model.keras')
@@ -32,7 +41,7 @@ def load_engine():
 
 model, scaler = load_engine()
 
-# --- 3. SIDEBAR INTERACTIVITY ---
+#sidebard css
 st.sidebar.image("https://cdn-icons-png.flaticon.com/512/808/808439.png", width=50)
 st.sidebar.title("Simulation Controls")
 st.sidebar.markdown("Drag sliders to dynamically alter the player's biometric forecast.")
@@ -42,7 +51,7 @@ sim_rest = st.sidebar.slider("Days of Rest", 1.0, 7.0, 2.0, step=1.0)
 sim_fga = st.sidebar.slider("Field Goal Attempts", 10.0, 30.0, 20.0, step=1.0)
 sim_fta = st.sidebar.slider("Free Throw Attempts", 0.0, 15.0, 5.0, step=1.0)
 
-# --- 4. DEEP LEARNING LOGIC ---
+#suing the deeplearning logic
 historical_sequence = np.array([
     [32.0, 35.5, 2.0, 22.0, 6.0], [24.0, 32.0, 1.0, 18.0, 4.0],
     [28.0, 36.0, 3.0, 20.0, 5.0], [41.0, 38.5, 1.0, 26.0, 9.0],
@@ -62,7 +71,7 @@ base_workload = (sim_minutes * 1.2) + (sim_fga * 1.5) + (sim_fta * 0.8)
 rest_recovery = sim_rest * 8.0
 fatigue_score = min(100, max(0, (base_workload - rest_recovery)))
 
-# --- 5. TOP DASHBOARD METRICS ---
+#Dashboard metrics
 st.title("FormPulse AI // Workload Engine")
 st.markdown("Predictive analytics modeling for NBA player momentum and fatigue.")
 st.write("---")
@@ -73,7 +82,7 @@ col2.metric("LSTM Projected Output", f"{round(projected_pts, 2)} PTS", "Live AI 
 col3.metric("System Status", "High Alert" if fatigue_score > 75 else ("Warning" if fatigue_score > 45 else "Optimal"))
 st.write("---")
 
-# --- 6. INTERACTIVE VISUALIZATIONS ---
+#Visualtization
 chart_col1, chart_col2 = st.columns([2, 1])
 
 with chart_col1:
@@ -109,7 +118,6 @@ with chart_col1:
         fillcolor='rgba(0, 230, 118, 0.5)' if fatigue_score < 75 else 'rgba(255, 23, 68, 0.5)'
     ))
 
-    # FIXED: tickfont is now used instead of textfont
     fig_radar.update_layout(
         polar=dict(
             radialaxis=dict(visible=True, range=[0, 100], color='#232b3e', showticklabels=False),
@@ -125,7 +133,7 @@ with chart_col1:
 with chart_col2:
     st.subheader("🔋 Overall Workload")
     
-    # Keeping the exact Meter Graph you wanted
+    # Meter Graph
     fig_gauge = go.Figure(go.Indicator(
         mode = "gauge+number",
         value = fatigue_score,
@@ -149,8 +157,6 @@ with chart_col2:
         margin=dict(l=20, r=20, t=40, b=20), height=320
     )
     st.plotly_chart(fig_gauge, use_container_width=True)
-
-# Add an expandable section for judges
 with st.expander("⚙️ View Architecture & Methodology"):
     st.markdown("""
     **FormPulse AI** uses a Bidirectional Long Short-Term Memory (LSTM) neural network. 
