@@ -73,13 +73,13 @@ col2.metric("LSTM Projected Output", f"{round(projected_pts, 2)} PTS", "Live AI 
 col3.metric("System Status", "High Alert" if fatigue_score > 75 else ("Warning" if fatigue_score > 45 else "Optimal"))
 st.write("---")
 
-# --- 6. INTERACTIVE VISUALIZATIONS (THE UPGRADE) ---
+# --- 6. INTERACTIVE VISUALIZATIONS ---
 chart_col1, chart_col2 = st.columns([2, 1])
 
 with chart_col1:
     st.subheader("🕸️ Player Biometric Radar")
     
-    # Normalize values to a 0-100 scale so the radar chart looks perfectly balanced
+    # Normalize values to a 0-100 scale
     radar_minutes = (sim_minutes / 48.0) * 100
     radar_rest = (sim_rest / 7.0) * 100
     radar_fga = (sim_fga / 30.0) * 100
@@ -89,7 +89,7 @@ with chart_col1:
     
     fig_radar = go.Figure()
     
-    # 1. The "Season Average" Baseline (Static background polygon)
+    # Season Average Polygon
     fig_radar.add_trace(go.Scatterpolar(
         r=[70, 60, 62, 50, 45], 
         theta=categories,
@@ -99,7 +99,7 @@ with chart_col1:
         fillcolor='rgba(52, 152, 219, 0.2)'
     ))
     
-    # 2. The "Live Prediction" (Dynamic foreground polygon)
+    # Live Forecast Polygon
     fig_radar.add_trace(go.Scatterpolar(
         r=[radar_minutes, radar_fga, radar_pts, radar_rest, fatigue_score],
         theta=categories,
@@ -109,10 +109,11 @@ with chart_col1:
         fillcolor='rgba(0, 230, 118, 0.5)' if fatigue_score < 75 else 'rgba(255, 23, 68, 0.5)'
     ))
 
+    # FIXED: tickfont is now used instead of textfont
     fig_radar.update_layout(
         polar=dict(
             radialaxis=dict(visible=True, range=[0, 100], color='#232b3e', showticklabels=False),
-            angularaxis=dict(color='#ffffff', gridcolor='#232b3e', textfont=dict(size=14))
+            angularaxis=dict(color='#ffffff', gridcolor='#232b3e', tickfont=dict(size=14)) 
         ),
         plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
         margin=dict(l=60, r=60, t=40, b=40),
@@ -123,6 +124,8 @@ with chart_col1:
 
 with chart_col2:
     st.subheader("🔋 Overall Workload")
+    
+    # Keeping the exact Meter Graph you wanted
     fig_gauge = go.Figure(go.Indicator(
         mode = "gauge+number",
         value = fatigue_score,
