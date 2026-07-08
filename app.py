@@ -42,7 +42,7 @@ def load_engine():
 model, scaler = load_engine()
 
 # --- 3. SIDEBAR INTERACTIVITY ---
-st.sidebar.image("https://cdn-icons-png.flaticon.com/512/808/808439.png", width=50) # Small basketball icon
+st.sidebar.image("https://cdn-icons-png.flaticon.com/512/808/808439.png", width=50)
 st.sidebar.title("Simulation Controls")
 st.sidebar.markdown("Drag the sliders to adjust real-time match variables.")
 
@@ -66,8 +66,10 @@ dummy_matrix = np.zeros((1, 5))
 dummy_matrix[0, 0] = prediction[0][0]
 projected_pts = scaler.inverse_transform(dummy_matrix)[0, 0]
 
-# Calculate a "Fatigue Index" (0 to 100) for the Gauge Chart
-fatigue_score = min(100, max(0, ((sim_minutes * 1.5) - (sim_rest * 10))))
+# FIXED: Workload index math now dynamically listens to ALL 4 sliders
+base_workload = (sim_minutes * 1.2) + (sim_fga * 1.5) + (sim_fta * 0.8)
+rest_recovery = sim_rest * 8.0
+fatigue_score = min(100, max(0, (base_workload - rest_recovery)))
 
 # --- 5. TOP DASHBOARD METRICS ---
 st.title("FormPulse AI // Workload Engine")
@@ -76,8 +78,8 @@ st.write("---")
 
 col1, col2, col3 = st.columns(3)
 col1.metric("Historical Baseline", "31.2 PTS", "Last 4 Games")
-col2.metric("LSTM Projected Output", f"{round(projected_pts, 1)} PTS", "Based on current sliders", delta_color="off")
-col3.metric("System Status", "High Alert" if fatigue_score > 75 else ("Warning" if fatigue_score > 50 else "Optimal"))
+col2.metric("LSTM Projected Output", f"{round(projected_pts, 2)} PTS", "Live AI Calculation", delta_color="off")
+col3.metric("System Status", "High Alert" if fatigue_score > 75 else ("Warning" if fatigue_score > 45 else "Optimal"))
 
 st.write("---")
 
@@ -88,32 +90,33 @@ with chart_col1:
     st.subheader("📈 5-Game Scoring Trajectory")
     fig_line = go.Figure()
     
-    # Historical Data
+    # Historical Data + Live Prediction
     fig_line.add_trace(go.Scatter(
-        x=["T-4", "T-3", "T-2", "T-1", "Matchday"],
+        x=["T-4", "T-3", "T-2", "T-1", f"Matchday ({round(projected_pts,1)}pt)"],
         y=[32, 24, 28, 41, float(projected_pts)],
         mode='lines+markers',
         name='Points Scored',
-        line=dict(color='#00E676', width=4, shape='spline'), # Neon green, smooth curves
-        marker=dict(size=[10, 10, 10, 10, 20], color='#ffffff', line=dict(width=2, color='#00E676'))
+        line=dict(color='#00E676', width=4, shape='spline'),
+        marker=dict(size=[10, 10, 10, 10, 20], color='#ffffff', line=dict(width=2, color='#e74c3c' if fatigue_score > 75 else '#00E676'))
     ))
     
+    # FIXED: Removed the hardcoded [10, 50] range so the graph auto-zooms and shows every micro-movement cleanly
     fig_line.update_layout(
         plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
         font=dict(color='#a3b1c6'),
-        yaxis=dict(range=[10, 50], gridcolor='#232b3e', zeroline=False),
+        yaxis=dict(gridcolor='#232b3e', zeroline=False, automargin=True),
         xaxis=dict(gridcolor='#232b3e'),
         margin=dict(l=20, r=20, t=30, b=20)
     )
     st.plotly_chart(fig_line, use_container_width=True)
 
 with chart_col2:
-    st.subheader("🔋 Biological Fatigue Index")
+    st.subheader("🔋 Combined Workload Index")
     fig_gauge = go.Figure(go.Indicator(
         mode = "gauge+number",
         value = fatigue_score,
         domain = {'x': [0, 1], 'y': [0, 1]},
-        title = {'text': "Fatigue Risk %", 'font': {'color': '#a3b1c6'}},
+        title = {'text': "Stress & Fatigue %", 'font': {'color': '#a3b1c6'}},
         number = {'font': {'color': '#ffffff'}},
         gauge = {
             'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': "#a3b1c6"},
@@ -122,9 +125,9 @@ with chart_col2:
             'borderwidth': 2,
             'bordercolor': "#232b3e",
             'steps': [
-                {'range': [0, 40], 'color': '#00E676'}, # Green / Safe
-                {'range': [40, 75], 'color': '#FFD600'}, # Yellow / Warning
-                {'range': [75, 100], 'color': '#FF1744'} # Red / Danger
+                {'range': [0, 45], 'color': '#00E676'},
+                {'range': [45, 75], 'color': '#FFD600'},
+                {'range': [75, 100], 'color': '#FF1744'}
             ]
         }
     ))
